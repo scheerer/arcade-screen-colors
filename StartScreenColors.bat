@@ -16,4 +16,4 @@ set PIXEL_GRID_SIZE=5
 # Adjust SCREEN_NUMBER to target a different screen. 0 is the primary screen.
 set SCREEN_NUMBER=0
 
-G:\Tools\arcade-screen_colors.exe
+G:\Tools\arcade-screen-colors.exe
