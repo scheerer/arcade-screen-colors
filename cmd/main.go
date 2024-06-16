@@ -14,6 +14,7 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/kbinani/screenshot"
 	"github.com/scheerer/arcade-screen-colors/internal/lights"
+	"github.com/scheerer/arcade-screen-colors/internal/lights/lifx"
 	"github.com/scheerer/arcade-screen-colors/internal/logging"
 	"github.com/scheerer/arcade-screen-colors/internal/util"
 )
@@ -24,12 +25,14 @@ var (
 )
 
 type appConfig struct {
-	ScreenNumber    int           `env:"SCREEN_NUMBER" envDefault:"0"`
-	PixelGridSize   int           `env:"PIXEL_GRID_SIZE" envDefault:"5"`
 	CaptureInterval time.Duration `env:"CAPTURE_INTERVAL" envDefault:"100ms"`
 	ColorAlgo       string        `env:"COLOR_ALGO" envDefault:"AVERAGE"`
 	LightType       string        `env:"LIGHT_TYPE" envDefault:"LIFX"`
 	LightGroupName  string        `env:"LIGHT_GROUP_NAME" envDefault:"ARCADE"`
+	MaxBrightness   float64       `env:"MAX_BRIGHTNESS" envDefault:"0.7"`
+	MinBrightness   float64       `env:"MIN_BRIGHTNESS" envDefault:"0"`
+	PixelGridSize   int           `env:"PIXEL_GRID_SIZE" envDefault:"5"`
+	ScreenNumber    int           `env:"SCREEN_NUMBER" envDefault:"0"`
 }
 
 func main() {
@@ -54,7 +57,11 @@ func main() {
 	var lightService lights.LightService
 	switch config.LightType {
 	case "LIFX":
-		lightService, err = lights.NewLifx(ctx, config.LightGroupName)
+		lightService, err = lifx.NewLifx(ctx, lifx.Config{
+			GroupName:     config.LightGroupName,
+			MinBrightness: config.MinBrightness,
+			MaxBrightness: config.MaxBrightness,
+		})
 		if err != nil {
 			logger.With(zap.Error(err)).Fatal("Failed to create LIFX light service")
 		}
@@ -105,9 +112,9 @@ func main() {
 				colorCalculationDuration := time.Since(colorCalculationStart)
 
 				color := lights.Color{
-					Red:   uint8(c.R),
-					Green: uint8(c.G),
-					Blue:  uint8(c.B),
+					Red:   c.R,
+					Green: c.G,
+					Blue:  c.B,
 				}
 
 				setColorStart := time.Now()

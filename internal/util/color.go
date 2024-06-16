@@ -5,7 +5,11 @@ import (
 	"image/color"
 	"math"
 	"sort"
+
+	"github.com/scheerer/arcade-screen-colors/internal/logging"
 )
+
+var logger = logging.New("util")
 
 func RgbToHsb(r, g, b uint8) (uint16, uint16, uint16) {
 	red := float64(r) / 255.0
@@ -59,53 +63,54 @@ func IsColorGreyish(saturation uint16) bool {
 }
 
 func AverageColor(img *image.RGBA, pixelGridSize int) color.RGBA {
-	var sumR, sumG, sumB, sumA uint64
+	var sumR, sumG, sumB, sumA, totalPixels uint64
 	bounds := img.Bounds()
 	width := bounds.Max.X
 	height := bounds.Max.Y
-	totalPixels := uint64(width * height)
 
 	for y := 0; y < height; y += pixelGridSize {
 		for x := 0; x < width; x += pixelGridSize {
+			totalPixels++
 			r, g, b, a := img.At(x, y).RGBA()
-			sumR += uint64(r >> 8)
-			sumG += uint64(g >> 8)
-			sumB += uint64(b >> 8)
-			sumA += uint64(a >> 8)
+			sumR += uint64(r)
+			sumG += uint64(g)
+			sumB += uint64(b)
+			sumA += uint64(a)
 		}
 	}
 
 	return color.RGBA{
-		R: uint8(sumR / totalPixels),
-		G: uint8(sumG / totalPixels),
-		B: uint8(sumB / totalPixels),
-		A: uint8(sumA / totalPixels),
+		R: uint8(float64(sumR/totalPixels) / 0xFFFF * 0xFF),
+		G: uint8(float64(sumG/totalPixels) / 0xFFFF * 0xFF),
+		B: uint8(float64(sumB/totalPixels) / 0xFFFF * 0xFF),
+		A: uint8(float64(sumA/totalPixels) / 0xFFFF * 0xFF),
 	}
 }
 
 // SquaredAverageColor calculates the squared average color of the image
 func SquaredAverageColor(img *image.RGBA, pixelGridSize int) color.RGBA {
-	var sumR, sumG, sumB, sumA uint64
+	var sumR, sumG, sumB, sumA, totalPixels uint64
 	bounds := img.Bounds()
 	width := bounds.Max.X
 	height := bounds.Max.Y
-	totalPixels := uint64(width * height)
 
 	for y := 0; y < height; y += pixelGridSize {
 		for x := 0; x < width; x += pixelGridSize {
+			totalPixels++
+
 			r, g, b, a := img.At(x, y).RGBA()
-			sumR += uint64((r >> 8) * (r >> 8))
-			sumG += uint64((g >> 8) * (g >> 8))
-			sumB += uint64((b >> 8) * (b >> 8))
-			sumA += uint64((a >> 8) * (a >> 8))
+			sumR += uint64(r) * uint64(r)
+			sumG += uint64(g) * uint64(g)
+			sumB += uint64(b) * uint64(b)
+			sumA += uint64(a) * uint64(a)
 		}
 	}
 
 	return color.RGBA{
-		R: uint8(math.Sqrt(float64(sumR / totalPixels))),
-		G: uint8(math.Sqrt(float64(sumG / totalPixels))),
-		B: uint8(math.Sqrt(float64(sumB / totalPixels))),
-		A: uint8(math.Sqrt(float64(sumA / totalPixels))),
+		R: uint8(math.Sqrt(float64(sumR/totalPixels)) / 0xFFFF * 0xFF),
+		G: uint8(math.Sqrt(float64(sumG/totalPixels)) / 0xFFFF * 0xFF),
+		B: uint8(math.Sqrt(float64(sumB/totalPixels)) / 0xFFFF * 0xFF),
+		A: uint8(math.Sqrt(float64(sumA/totalPixels)) / 0xFFFF * 0xFF),
 	}
 }
 
@@ -119,10 +124,10 @@ func MedianColor(img *image.RGBA, pixelGridSize int) color.RGBA {
 	for y := 0; y < height; y += pixelGridSize {
 		for x := 0; x < width; x += pixelGridSize {
 			r, g, b, a := img.At(x, y).RGBA()
-			reds = append(reds, uint8(r>>8))
-			greens = append(greens, uint8(g>>8))
-			blues = append(blues, uint8(b>>8))
-			alphas = append(alphas, uint8(a>>8))
+			reds = append(reds, uint8(float64(r)/0xFFFF*0xFF))
+			greens = append(greens, uint8(float64(g)/0xFFFF*0xFF))
+			blues = append(blues, uint8(float64(b)/0xFFFF*0xFF))
+			alphas = append(alphas, uint8(float64(a)/0xFFFF*0xFF))
 		}
 	}
 
