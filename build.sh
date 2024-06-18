@@ -1,1 +1,1 @@
-go build -o bin/arcade-screen_colors cmd/main.go
+go build -o bin/arcade-screen-colors cmd/main.go
