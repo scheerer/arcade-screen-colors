@@ -26,14 +26,14 @@ Enjoy!
 
 ### Development Running
 
-`go run cmd/main.go`
+`go run main.go`
 
 ### Building
 
 **Currently only supports Windows execution**
 
 From Windows:
-`go build -o bin/arcade-screen-colors.exe cmd/main.go`
+`go build -o bin/arcade-screen-colors.exe main.go`
 
 From Other:
-`GOOS=windows GOARCH=amd64 go build -o bin/arcade-screen-colors.exe cmd/main.go`
+`GOOS=windows GOARCH=amd64 go build -o bin/arcade-screen-colors.exe main.go`
