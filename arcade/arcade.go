@@ -75,6 +75,11 @@ func RunScreenColors(ctx context.Context, config ScreenColorConfig, lightService
 				Blue:  c.B,
 			}
 
+			if ctx.Err() != nil {
+				// context is done - avoid setting color and break out of loop
+				// this may have occurred while capturing the screen or calculating the color
+				break
+			}
 			setColorStart := time.Now()
 			lightService.SetColorWithDuration(ctx, color, 50*time.Millisecond)
 			setColorDuration := time.Since(setColorStart)
