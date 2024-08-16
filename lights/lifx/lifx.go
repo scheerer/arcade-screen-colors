@@ -19,6 +19,9 @@ import (
 var logger = logging.New("lifx")
 
 type LifxLights struct {
+	initialColor       lights.Color
+	hasSetInitialColor bool
+
 	contextCancel context.CancelFunc
 
 	config Config
@@ -44,7 +47,8 @@ func NewLifxFromScreenColorConfig(config arcade.ScreenColorConfig) *LifxLights {
 
 func NewLifx(config Config) *LifxLights {
 	return &LifxLights{
-		config: config,
+		initialColor: lights.ColorWhite,
+		config:       config,
 	}
 }
 
@@ -128,9 +132,11 @@ func (l *LifxLights) discover(ctx context.Context) {
 			l.lightsMu.Lock()
 			l.group = g
 			l.lightsMu.Unlock()
+			if !l.hasSetInitialColor {
+				l.SetColorWithDuration(ctx, l.initialColor, 0)
+			}
 		} else {
 			logger.With(zap.Error(ctxWithTimeout.Err())).Warn("Couldn't discover group.")
-			// l.resetClient()
 		}
 	}
 
@@ -153,6 +159,9 @@ func (l *LifxLights) LightCount() int {
 
 func (l *LifxLights) SetColorWithDuration(ctx context.Context, color lights.Color, duration time.Duration) {
 	if l.group == nil {
+		if !l.hasSetInitialColor {
+			l.initialColor = color
+		}
 		logger.Warn("No LIFX group found to set colors")
 		return
 	}
