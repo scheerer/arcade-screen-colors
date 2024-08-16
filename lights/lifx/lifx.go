@@ -134,6 +134,7 @@ func (l *LifxLights) discover(ctx context.Context) {
 			l.lightsMu.Unlock()
 			if !l.hasSetInitialColor {
 				l.SetColorWithDuration(ctx, l.initialColor, 0)
+				l.hasSetInitialColor = true
 			}
 		} else {
 			logger.With(zap.Error(ctxWithTimeout.Err())).Warn("Couldn't discover group.")
