@@ -7,10 +7,9 @@ import (
 	"time"
 
 	"github.com/kbinani/screenshot"
-	"github.com/scheerer/arcade-screen-colors/internal/lights"
-	"github.com/scheerer/arcade-screen-colors/internal/lights/lifx"
 	"github.com/scheerer/arcade-screen-colors/internal/logging"
 	"github.com/scheerer/arcade-screen-colors/internal/util"
+	"github.com/scheerer/arcade-screen-colors/lights"
 	"go.uber.org/zap"
 )
 
@@ -27,22 +26,7 @@ type ScreenColorConfig struct {
 	ScreenNumber    int           `env:"SCREEN_NUMBER" envDefault:"0"`
 }
 
-func RunScreenColors(ctx context.Context, config ScreenColorConfig) {
-	var err error
-	var lightService lights.LightService
-	switch config.LightType {
-	case "LIFX":
-		lightService, err = lifx.NewLifx(ctx, lifx.Config{
-			GroupName:     config.LightGroupName,
-			MinBrightness: config.MinBrightness,
-			MaxBrightness: config.MaxBrightness,
-		})
-		if err != nil {
-			logger.With(zap.Error(err)).Fatal("Failed to create LIFX light service")
-		}
-	default:
-		logger.Fatalf("unknown light type: %v", config.LightType)
-	}
+func RunScreenColors(ctx context.Context, config ScreenColorConfig, lightService lights.LightService) {
 
 	var computeColor func(image *image.RGBA, pixelGridSize int) color.RGBA
 	switch config.ColorAlgo {

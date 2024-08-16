@@ -11,6 +11,7 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/scheerer/arcade-screen-colors/arcade"
 	"github.com/scheerer/arcade-screen-colors/internal/logging"
+	"github.com/scheerer/arcade-screen-colors/lights/lifx"
 )
 
 var (
@@ -39,8 +40,11 @@ func main() {
 	logger.Info("Press Ctrl+C to stop")
 
 	ctx, cancel := context.WithCancel(context.Background())
+	lightService := lifx.NewLifxFromScreenColorConfig(config)
 
-	go arcade.RunScreenColors(ctx, config)
+	go lightService.Start(ctx)
+
+	go arcade.RunScreenColors(ctx, config, lightService)
 
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)

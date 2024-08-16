@@ -16,6 +16,8 @@ type Color struct {
 }
 
 type LightService interface {
+	Start(ctx context.Context)
+	Stop()
 	LightCount() int
 	SetColorWithDuration(ctx context.Context, color Color, duration time.Duration)
 }

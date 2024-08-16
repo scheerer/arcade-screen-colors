@@ -9,15 +9,18 @@ import (
 	"github.com/pdf/golifx"
 	"github.com/pdf/golifx/common"
 	"github.com/pdf/golifx/protocol"
-	"github.com/scheerer/arcade-screen-colors/internal/lights"
+	"github.com/scheerer/arcade-screen-colors/arcade"
 	"github.com/scheerer/arcade-screen-colors/internal/logging"
 	"github.com/scheerer/arcade-screen-colors/internal/util"
+	"github.com/scheerer/arcade-screen-colors/lights"
 	"go.uber.org/zap"
 )
 
 var logger = logging.New("lifx")
 
 type LifxLights struct {
+	contextCancel context.CancelFunc
+
 	config Config
 	client *golifx.Client
 
@@ -31,21 +34,30 @@ type Config struct {
 	MinBrightness float64
 }
 
-func NewLifx(ctx context.Context, config Config) (*LifxLights, error) {
-	client, err := golifx.NewClient(&protocol.V2{})
-	if err != nil {
-		return nil, err
-	}
+func NewLifxFromScreenColorConfig(config arcade.ScreenColorConfig) *LifxLights {
+	return NewLifx(Config{
+		GroupName:     config.LightGroupName,
+		MaxBrightness: config.MaxBrightness,
+		MinBrightness: config.MinBrightness,
+	})
+}
 
-	l := &LifxLights{
+func NewLifx(config Config) *LifxLights {
+	return &LifxLights{
 		config: config,
-		client: client,
 	}
-	go l.Start(ctx)
-	return l, nil
 }
 
 func (l *LifxLights) Start(ctx context.Context) {
+	ctx, l.contextCancel = context.WithCancel(ctx)
+
+	client, err := golifx.NewClient(&protocol.V2{})
+	if err != nil {
+		logger.With(zap.Error(err)).Warn("Failed to create LIFX client")
+		return
+	}
+	l.client = client
+
 	discoveryInterval := 15 * time.Second
 	ticker := time.NewTicker(discoveryInterval)
 	defer ticker.Stop()
@@ -64,13 +76,28 @@ func (l *LifxLights) Start(ctx context.Context) {
 			l.discover(ctxWithTimeout)
 			cancel()
 		case <-ctx.Done():
+			logger.Info("LIFX service shutting down...")
 			return
 		}
 	}
+}
 
+func (l *LifxLights) Stop() {
+	if l.contextCancel != nil {
+		l.contextCancel()
+	}
+	if l.client != nil {
+		l.client.Close()
+		l.client = nil
+	}
 }
 
 func (l *LifxLights) discover(ctx context.Context) {
+	if l.client == nil {
+		logger.Error("No LIFX client found to discover group")
+		return
+	}
+
 	logger.With(zap.String("group", l.config.GroupName)).Info("LIFX discovery starting...")
 
 	completed := make(chan error)
@@ -125,6 +152,11 @@ func (l *LifxLights) LightCount() int {
 }
 
 func (l *LifxLights) SetColorWithDuration(ctx context.Context, color lights.Color, duration time.Duration) {
+	if l.group == nil {
+		logger.Warn("No LIFX group found to set colors")
+		return
+	}
+
 	lifxColor := newLifxColor(color)
 	lifxColor = adjustColor(lifxColor, l.config)
 
