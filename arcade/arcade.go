@@ -27,6 +27,7 @@ type ScreenColorConfig struct {
 }
 
 func RunScreenColors(ctx context.Context, config ScreenColorConfig, lightService lights.LightService) {
+	logger.With(zap.Any("config", config)).Info("Starting arcade screen colors")
 
 	var computeColor func(image *image.RGBA, pixelGridSize int) color.RGBA
 	switch config.ColorAlgo {
@@ -43,10 +44,11 @@ func RunScreenColors(ctx context.Context, config ScreenColorConfig, lightService
 	}
 
 	var lastWarning time.Time
+CAPTURE_LOOP:
 	for {
 		select {
 		case <-ctx.Done():
-			break
+			break CAPTURE_LOOP
 		default:
 			if lightService.LightCount() == 0 {
 				time.Sleep(config.CaptureInterval)
@@ -78,7 +80,7 @@ func RunScreenColors(ctx context.Context, config ScreenColorConfig, lightService
 			if ctx.Err() != nil {
 				// context is done - avoid setting color and break out of loop
 				// this may have occurred while capturing the screen or calculating the color
-				break
+				break CAPTURE_LOOP
 			}
 			setColorStart := time.Now()
 			lightService.SetColorWithDuration(ctx, color, 50*time.Millisecond)
@@ -101,4 +103,5 @@ func RunScreenColors(ctx context.Context, config ScreenColorConfig, lightService
 			}
 		}
 	}
+	logger.Info("Arcade screen colors stopped")
 }
