@@ -44,14 +44,15 @@ func RunScreenColors(ctx context.Context, config ScreenColorConfig, lightService
 	}
 
 	var lastWarning time.Time
+	time.NewTimer(0)
+	captureTicker := time.NewTicker(config.CaptureInterval)
 CAPTURE_LOOP:
 	for {
 		select {
 		case <-ctx.Done():
 			break CAPTURE_LOOP
-		default:
+		case <-captureTicker.C:
 			if lightService.LightCount() == 0 {
-				time.Sleep(config.CaptureInterval)
 				continue
 			}
 
@@ -60,10 +61,6 @@ CAPTURE_LOOP:
 			captureScreenDuration := time.Since(startTime)
 			if err != nil {
 				logger.With(zap.Error(err)).Error("Failed to capture screen")
-				untilNextTick := config.CaptureInterval - captureScreenDuration
-				if untilNextTick > 0 {
-					time.Sleep(untilNextTick)
-				}
 				continue
 			}
 
@@ -97,9 +94,6 @@ CAPTURE_LOOP:
 						Warn("Cannot keep up with CAPTURE_INTERVAL. Consider increasing PIXEL_GRID_SIZE or increasing CAPTURE_INTERVAL.")
 					lastWarning = time.Now()
 				}
-			} else if totalDuration > 0 {
-				untilNextTick := config.CaptureInterval - totalDuration
-				time.Sleep(untilNextTick)
 			}
 		}
 	}
