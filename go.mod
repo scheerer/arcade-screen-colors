@@ -1,6 +1,6 @@
 module github.com/scheerer/arcade-screen-colors
 
-go 1.21
+go 1.23
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible

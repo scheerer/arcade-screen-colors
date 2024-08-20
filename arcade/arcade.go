@@ -46,6 +46,7 @@ func RunScreenColors(ctx context.Context, config ScreenColorConfig, lightService
 	var lastWarning time.Time
 	time.NewTimer(0)
 	captureTicker := time.NewTicker(config.CaptureInterval)
+	defer captureTicker.Stop()
 CAPTURE_LOOP:
 	for {
 		select {
